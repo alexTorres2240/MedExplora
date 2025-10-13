@@ -48,7 +48,7 @@ function login() {
     return
   } else {
     mensaje.value = 'Inicio de sesión exitoso.'
-    routerCuerpoF.push('/cuerpoFrontal')
+    routerCuerpoF.push('/HumanModel')
   }
 }
 </script>
