@@ -1,14 +1,15 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
-export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+import { defineNuxtConfig } from 'nuxt/config'
 
-  modules: [
-    '@nuxt/content',
-    '@nuxt/eslint',
-    '@nuxt/image',
-    '@nuxt/scripts',
-    '@nuxt/test-utils',
-    '@nuxt/ui'
-  ]
+export default defineNuxtConfig({
+  devtools: { enabled: true },
+  ssr: false,
+  nitro: {
+    preset: 'static'
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['three']
+    }
+  },
+  compatibilityDate: '2025-10-19'
 })
