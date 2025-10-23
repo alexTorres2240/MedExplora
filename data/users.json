@@ -1,0 +1,38 @@
+{
+  "alejandro.torres.villalobos@uabc.edu.mx": {
+    "passwordHash": "$2b$10$jEwxUPnQmfW0ROmTgHuJe.Jrf2.u5j8audJkohDL/HhASEgOLqYt.",
+    "nombre": "Alejandro",
+    "apellido": "Torres",
+    "createdAt": 1760989021130
+  },
+  "juan.perez2004@uabc.edu.mx": {
+    "passwordHash": "$2b$10$HkxJ/3KG5jhNke7Nt2dia.LFpS5Cj.GifYBv9vyEEvi2d6dHGNcB6",
+    "nombre": "Juan",
+    "apellido": "Perez",
+    "createdAt": 1761001355763
+  },
+  "luis.lopez2004@uabc.edu.mx": {
+    "passwordHash": "$2b$10$rAuZzuwpc.36qxA6HTqs1eNsvzlPv1dnqkI4R87wgNMjOD6WA8jTy",
+    "nombre": "Luis",
+    "apellido": "Lopez",
+    "createdAt": 1761010915293
+  },
+  "annie.garcia2005@uabc.edu.mx": {
+    "passwordHash": "$2b$10$nq437/pU7MVk67O35YbmjeVP35unhsnpFf5N.AvtkqJrORNW4T4J2",
+    "nombre": "Annie",
+    "apellido": "Garcia",
+    "createdAt": 1761094378297
+  },
+  "juan.perez@uabc.edu.mx": {
+    "passwordHash": "$2b$10$zqWJqNjNt.tz9vGZyZdQwuZEH0FmbLpgsfIaVkD1.oabKH2JfXlgm",
+    "nombre": "Juan",
+    "apellido": "Perez",
+    "createdAt": 1761099453343
+  },
+  "gustavo.hernandez2004@uabc.edu.mx": {
+    "passwordHash": "$2b$10$EdQt3Fz/gaEfJMtLv1o6UeMpZIpsbXjwOQstgTQW8cxEhVnb8j.rm",
+    "nombre": "Gustavo",
+    "apellido": "Hernandez",
+    "createdAt": 1761099806734
+  }
+}
