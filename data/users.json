@@ -34,5 +34,11 @@
     "nombre": "Gustavo",
     "apellido": "Hernandez",
     "createdAt": 1761099806734
+  },
+  "kevyn.medina@uabc.edu.mx": {
+    "passwordHash": "$2b$10$IDwbRNmLD5LIGGHD4P0pHuoyry58d6tv3giUGkzCR4iaT7kOkuTge",
+    "nombre": "Kevyn",
+    "apellido": "Medina",
+    "createdAt": 1761443121900
   }
 }

@@ -1,56 +1,64 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import { join } from 'path'
-import bcrypt from 'bcryptjs'
-import { createError, sendError } from 'h3'
-
-const DATA_FILE = join(process.cwd(), 'data', 'users.json')
-
-function ensureDataFile() {
-  const dir = join(process.cwd(), 'data')
-  if (!existsSync(dir)) mkdirSync(dir)
-  if (!existsSync(DATA_FILE)) writeFileSync(DATA_FILE, JSON.stringify({}), 'utf-8')
-}
-
-function loadUsers() {
-  ensureDataFile()
-  return JSON.parse(readFileSync(DATA_FILE, 'utf-8') || '{}')
-}
-function saveUsers(u) {
-  writeFileSync(DATA_FILE, JSON.stringify(u, null, 2), 'utf-8')
-}
+import pool from '../../utils/db.js';
+import bcrypt from 'bcrypt';
 
 export default defineEventHandler(async (event) => {
-  try {
-    const body = await readBody(event)
-    const email = (body.email || '').toLowerCase()
-    if (!email || (!body.password && !body.passwordHash)) {
-      return sendError(event, createError({ statusCode: 400, statusMessage: 'Faltan campos' }))
-    }
+    let connection;
 
-    const users = loadUsers()
-    if (users[email]) {
-      return sendError(event, createError({ statusCode: 409, statusMessage: 'Usuario ya existe' }))
-    }
+    try {
+        // 1. Leer los datos (ahora coinciden con el formulario corregido)
+        const body = await readBody(event);
+        const { name, apellido, email, password } = body; // <-- ¡Actualizado!
 
-    // generar hash si se envió password en texto (recomendado hacerlo en servidor)
-    let hash = body.passwordHash
-    if (!hash && body.password) {
-      const salt = bcrypt.genSaltSync(10)
-      hash = bcrypt.hashSync(body.password, salt)
-    }
-    if (!hash) {
-      return sendError(event, createError({ statusCode: 400, statusMessage: 'No se proporcionó hash/contraseña' }))
-    }
+        // 2. Validar que tengamos todo
+        if (!name || !apellido || !email || !password) { // <-- ¡Actualizado!
+            throw createError({
+                statusCode: 400,
+                message: 'Faltan campos obligatorios (nombre, apellido, email o contraseña).',
+            });
+        }
 
-    users[email] = {
-      passwordHash: hash,
-      nombre: body.nombre || '',
-      apellido: body.apellido || '',
-      createdAt: Date.now()
+        // 3. Encriptar la contraseña (el servidor lo hace)
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // 4. Obtener una conexión del 'pool'
+        connection = await pool.getConnection();
+
+        // 5. Preparar la consulta SQL (con la nueva columna 'apellido')
+        const sql = "INSERT INTO users (name, apellido, email, password) VALUES (?, ?, ?, ?)"; // <-- ¡Actualizado!
+
+        // 6. Ejecutar la consulta
+        const [result] = await connection.execute(sql, [name, apellido, email, hashedPassword]); // <-- ¡Actualizado!
+
+        // 7. Si todo sale bien, devolvemos un éxito
+        return {
+            statusCode: 201, // 201 Created
+            message: '¡Usuario registrado con éxito!', // <-- Este es el mensaje que debes ver
+            userId: result.insertId
+        };
+
+    } catch (error) {
+        // Manejo de errores
+        console.error('Error al registrar usuario:', error);
+
+        // Error común: email duplicado
+        if (error.code === 'ER_DUP_ENTRY') {
+            throw createError({
+                statusCode: 409, // 409 Conflict
+                message: 'El correo electrónico ya está registrado.',
+            });
+        }
+
+        // Otro error
+        throw createError({
+            statusCode: 500, // 500 Internal Server Error
+            message: 'Error interno del servidor al registrar el usuario.',
+        });
+
+    } finally {
+        // 8. ¡MUY IMPORTANTE! Liberar la conexión
+        if (connection) {
+            connection.release();
+        }
     }
-    saveUsers(users)
-    return { statusCode: 201, ok: true, message: 'Registrado' }
-  } catch (err) {
-    return sendError(event, createError({ statusCode: 500, statusMessage: 'Error interno' }))
-  }
-})
+});

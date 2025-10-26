@@ -61,13 +61,15 @@ const confContrasena = ref('')
 const mensajeReg = ref('')
 const errorReg = ref(false)
 
+
 async function register() {
   mensajeReg.value = ''
   errorReg.value = false
 
   const email = (correo.value || '').trim().toLowerCase()
 
-  // 1) validar dominio institucional usando la utilidad centralizada
+  // --- VALIDACIONES (Estas las tenías bien) ---
+  // 1) Domain check
   const domainCheck = await validateInstitutionalEmail(email)
   if (!domainCheck.ok) {
     mensajeReg.value = 'Correo no permitido: ' + (domainCheck.reason || 'dominio inválido')
@@ -75,12 +77,13 @@ async function register() {
     return
   }
 
-  // 2) validar contraseñas
+  // 2) Password match
   if (contrasena.value !== confContrasena.value) {
     mensajeReg.value = 'Las contraseñas no coinciden.'
     errorReg.value = true
     return
   }
+  // 3) Password strength
   const pwdCheck = validatePasswordStrength(contrasena.value)
   if (!pwdCheck.ok) {
     mensajeReg.value = 'Contraseña débil: ' + pwdCheck.errors.join(', ')
@@ -88,69 +91,56 @@ async function register() {
     return
   }
 
-  // 3) comprobar existencia del usuario en backend (si existe), si backend no disponible usar fallback localStorage
+  // --- LLAMADA A LA API (Simplificada) ---
   try {
-    const checkRes = await fetch(`/api/users/check?email=${encodeURIComponent(email)}`)
-    if (checkRes.ok) {
-      const j = await checkRes.json()
-      if (j.exists) {
-        mensajeReg.value = 'Ya existe una cuenta con este correo. Use el inicio de sesión.'
-        errorReg.value = true
-        return
+    // Ya no necesitamos el check previo, el endpoint de registro lo maneja.
+
+    // Intentar registrar usando $fetch (maneja errores mejor)
+    const response = await $fetch('/api/users/register', {
+      method: 'POST',
+      // $fetch se encarga del JSON.stringify y headers correctos
+      body: {
+        name: nombre.value,       // Campo 'name' como espera el backend
+        apellido: apellido.value, // Campo 'apellido'
+        email: email,             // Email limpio
+        password: contrasena.value  // Contraseña en texto plano
       }
+    })
+
+    // Si $fetch funciona (respuesta 2xx), el registro fue exitoso
+    mensajeReg.value = response.message || '¡Usuario registrado con éxito!'; // Usar mensaje del backend
+    errorReg.value = false;
+
+    // Limpiar formulario
+    nombre.value = '';
+    apellido.value = '';
+    correo.value = '';
+    contrasena.value = '';
+    confContrasena.value = '';
+
+    // Opcional: Redirigir a login después de un momento
+    // setTimeout(() => {
+    //   navigateTo('/'); // Ajusta la ruta si tu login no está en '/'
+    // }, 2000);
+
+  } catch (error) {
+    // $fetch lanza error si la respuesta no es 2xx
+    console.error('Error en registro:', error);
+
+    // Intentar obtener el mensaje de error específico del backend
+    if (error.response && error.response._data && error.response._data.message) {
+      mensajeReg.value = error.response._data.message;
+    } else if (error.message.includes('fetch')) {
+      // Error de red o servidor no disponible
+      mensajeReg.value = 'No se pudo conectar con el servidor. Intente más tarde.';
     } else {
-      // si el endpoint existe pero devuelve error, detener registro en producción
-      // aquí continuamos con fallback demo
+      // Otro tipo de error
+      mensajeReg.value = 'Error en el registro: ' + (error.message || 'desconocido');
     }
-  } catch (e) {
-    // backend no disponible -> seguir con fallback demo localStorage
+    errorReg.value = true;
   }
+} // <--- Asegúrate que esta llave cierra la función register
 
-  // 4) hashear la contraseña y enviar al backend / fallback localStorage
-  try {
-    const hashed = await hashPassword(contrasena.value)
-
-    // intentar registrar en servidor
-    try {
-      const res = await fetch('/api/users/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          passwordHash: hashed,
-          nombre: nombre.value,
-          apellido: apellido.value
-        })
-      })
-      if (res.ok) {
-        mensajeReg.value = 'Cuenta creada. Verifique su correo (si aplica).'
-        errorReg.value = false
-        correo.value = contrasena.value = confContrasena.value = nombre.value = apellido.value = ''
-        return
-      }
-      // si el servidor responde con error, caemos a fallback
-    } catch (e) {
-      // servidor no disponible -> fallback
-    }
-
-    // fallback demo: guardar en localStorage (solo para desarrollo)
-    const store = JSON.parse(localStorage.getItem('demo_users') || '{}')
-    if (store[email]) {
-      mensajeReg.value = 'Ya existe una cuenta con este correo (local).'
-      errorReg.value = true
-      return
-    }
-    store[email] = { passwordHash: hashed, nombre: nombre.value, apellido: apellido.value, createdAt: Date.now() }
-    localStorage.setItem('demo_users', JSON.stringify(store))
-
-    mensajeReg.value = 'Cuenta creada (modo demo local).'
-    errorReg.value = false
-    correo.value = contrasena.value = confContrasena.value = nombre.value = apellido.value = ''
-  } catch (err) {
-    mensajeReg.value = 'Error en el registro: ' + (err.message || 'desconocido')
-    errorReg.value = true
-  }
-}
 </script>
 
 <style scoped>
