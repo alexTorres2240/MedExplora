@@ -4,7 +4,7 @@
       <div class="register-card">
         <img src="/imagenes/logos/logoMedEx.png" alt="Logo MedExplora" class="logoMedEx" />
         <img src="/imagenes/logos/logoUABC.png" alt="Logo UABC" class="logoUABC" />
-        <form @submit.prevent="login">
+        <form @submit.prevent="register">
           <input
             type="nombre"
             v-model="nombre"
@@ -23,18 +23,40 @@
             placeholder="Correo electrónico"
             required
           />
-          <input
-            type="password"
-            v-model="contrasena"
-            placeholder="Contraseña"
-            required
-          />
-          <input
-            type="password"
-            v-model="confContrasena"
-            placeholder="Contraseña"
-            required
-          />
+
+          <!-- Campo Contraseña -->
+          <div class="input-con-eye">
+        <input
+          :type="mostrarContrasena ? 'text' : 'password'"
+          v-model="contrasena"
+          placeholder="Contraseña"
+          required
+        />
+        <img
+          class="eye-icon"
+          :src="mostrarContrasena ? '/imagenes/multimedia/OjoAbierto.png' : '/imagenes/multimedia/OjoCerrado.png'"
+          @click="mostrarContrasena = !mostrarContrasena"
+          alt="Mostrar/Ocultar"
+        />
+      </div>
+
+          <!-- Confirmar contraseña -->
+          <div class="input-con-eye">
+            <input
+              :type="mostrarConfContrasena ? 'text' : 'password'"
+              v-model="confContrasena"
+              placeholder="Confirmar contraseña"
+              required
+            />
+            <img
+              class="eye-icon"
+              :src="mostrarConfContrasena ? '/imagenes/multimedia/OjoAbierto.png' : '/imagenes/multimedia/OjoCerrado.png'"
+              @click="mostrarConfContrasena = !mostrarConfContrasena"
+              alt="Mostrar/Ocultar"
+            />
+          </div>
+
+
           <button type="submit">Regístrarme</button>
         </form>
         <p v-if="mensajeReg" :class="{'mensaje': true, 'error': errorReg, 'exito': !errorReg}">
@@ -51,30 +73,108 @@
 
 <script setup>
 import { ref } from 'vue'
+import { validateInstitutionalEmail, validatePasswordStrength, hashPassword } from '~/utils/security';
 
+const mostrarContrasena = ref(false)
+const mostrarConfContrasena = ref(false)
+
+const nombre = ref('')
+const apellido = ref('')
 const correo = ref('')
 const contrasena = ref('')
 const confContrasena = ref('')
 const mensajeReg = ref('')
 const errorReg = ref(false)
 
-function login() {
-  const dominioInst = '@uabc.edu.mx'
+async function register() {
+  mensajeReg.value = ''
+  errorReg.value = false
 
-  if (!correo.value.endsWith(dominioInst)) {
-    mensajeReg.value = 'Solo se permite el registro con correo institucional UABC.'
-    errorReg.value = true;
-    return
-  } else if (contrasena.value !== confContrasena.value) {
-    mensajeReg.value = 'Las contraseñas no coinciden.'
-    errorReg.value = true;
-    return
-  } else {
-    mensajeReg.value = 'Registro éxitoso.'
-    errorReg.value = false;
+  const email = (correo.value || '').trim().toLowerCase()
+
+  // 1) validar dominio institucional usando la utilidad centralizada
+  const domainCheck = await validateInstitutionalEmail(email)
+  if (!domainCheck.ok) {
+    mensajeReg.value = 'Correo no permitido: ' + (domainCheck.reason || 'dominio inválido')
+    errorReg.value = true
     return
   }
 
+  // 2) validar contraseñas
+  if (contrasena.value !== confContrasena.value) {
+    mensajeReg.value = 'Las contraseñas no coinciden.'
+    errorReg.value = true
+    return
+  }
+  const pwdCheck = validatePasswordStrength(contrasena.value)
+  if (!pwdCheck.ok) {
+    mensajeReg.value = 'Contraseña débil: ' + pwdCheck.errors.join(', ')
+    errorReg.value = true
+    return
+  }
+
+  // 3) comprobar existencia del usuario en backend (si existe), si backend no disponible usar fallback localStorage
+  try {
+    const checkRes = await fetch(`/api/users/check?email=${encodeURIComponent(email)}`)
+    if (checkRes.ok) {
+      const j = await checkRes.json()
+      if (j.exists) {
+        mensajeReg.value = 'Ya existe una cuenta con este correo. Use el inicio de sesión.'
+        errorReg.value = true
+        return
+      }
+    } else {
+      // si el endpoint existe pero devuelve error, detener registro en producción
+      // aquí continuamos con fallback demo
+    }
+  } catch (e) {
+    // backend no disponible -> seguir con fallback demo localStorage
+  }
+
+  // 4) hashear la contraseña y enviar al backend / fallback localStorage
+  try {
+    const hashed = await hashPassword(contrasena.value)
+
+    // intentar registrar en servidor
+    try {
+      const res = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          passwordHash: hashed,
+          nombre: nombre.value,
+          apellido: apellido.value
+        })
+      })
+      if (res.ok) {
+        mensajeReg.value = 'Cuenta creada. Verifique su correo (si aplica).'
+        errorReg.value = false
+        correo.value = contrasena.value = confContrasena.value = nombre.value = apellido.value = ''
+        return
+      }
+      // si el servidor responde con error, caemos a fallback
+    } catch (e) {
+      // servidor no disponible -> fallback
+    }
+
+    // fallback demo: guardar en localStorage (solo para desarrollo)
+    const store = JSON.parse(localStorage.getItem('demo_users') || '{}')
+    if (store[email]) {
+      mensajeReg.value = 'Ya existe una cuenta con este correo (local).'
+      errorReg.value = true
+      return
+    }
+    store[email] = { passwordHash: hashed, nombre: nombre.value, apellido: apellido.value, createdAt: Date.now() }
+    localStorage.setItem('demo_users', JSON.stringify(store))
+
+    mensajeReg.value = 'Cuenta creada (modo demo local).'
+    errorReg.value = false
+    correo.value = contrasena.value = confContrasena.value = nombre.value = apellido.value = ''
+  } catch (err) {
+    mensajeReg.value = 'Error en el registro: ' + (err.message || 'desconocido')
+    errorReg.value = true
+  }
 }
 </script>
 
@@ -159,5 +259,32 @@ button:hover {
 .mensaje.exito {
   color: #27ae60;
 }
+
+.input-con-eye {
+  position: relative;
+  width: 106%;
+  margin-bottom: 10px;
+}
+
+.input-con-eye input {
+  width: 100%;
+  height: 40px;
+  padding: 10px 40px 10px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box; 
+}
+
+.eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-80%);
+  cursor: pointer;
+  width: 30px;  
+  height: 20px; 
+}
+
 
 </style>
