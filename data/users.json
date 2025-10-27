@@ -34,5 +34,11 @@
     "nombre": "Gustavo",
     "apellido": "Hernandez",
     "createdAt": 1761099806734
+  },
+  "juan.sarmiento@uabc.edu.mx": {
+    "passwordHash": "$2b$10$xyAOc1KQVky9NehwkvFGQ.FnTjjS7opHsE14EkP6mbbnRObawgXvq",
+    "nombre": "Juan",
+    "apellido": "Sarmiento",
+    "createdAt": 1761448987790
   }
 }
