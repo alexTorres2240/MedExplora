@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
@@ -15,16 +16,29 @@
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/image": "^1.11.0",
     "@nuxt/scripts": "^0.12.1",
-    "@nuxt/test-utils": "^3.19.2",
     "@nuxt/ui": "^4.0.1",
+    "@tresjs/core": "^5.1.0",
+    "@tresjs/nuxt": "^5.1.0",
     "@unhead/vue": "^2.0.17",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^12.4.1",
     "eslint": "^9.37.0",
     "image-map-resizer": "^1.0.10",
+    "mysql2": "^3.15.3",
     "nuxt": "^4.1.2",
+    "three": "^0.180.0",
+    "three-stdlib": "^2.36.0",
     "typescript": "^5.9.3",
-    "vue": "^3.5.22",
     "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^3.20.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^20.0.8",
+    "jsdom": "^27.2.0",
+    "vitest": "^3.2.4",
+    "vue": "^3.5.22"
   }
 }
