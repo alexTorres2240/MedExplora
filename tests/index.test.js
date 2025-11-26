@@ -201,7 +201,7 @@ describe('IndexPage.vue - Login', () => {
     expect(localStorageMock.setItem).toHaveBeenCalledWith('authToken', mockToken)
     expect(localStorageMock.setItem).toHaveBeenCalledWith('userEmail', 'estudiante@uabc.edu.mx')
 
-    expect(pushSpy).toHaveBeenCalledWith('/HumanModel')
+    expect(pushSpy).toHaveBeenCalledWith('/inicio')
   })
 
   // ===== TEST 8 =====

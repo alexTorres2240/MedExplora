@@ -9,13 +9,9 @@
 
     <!-- Panel informativo lateral -->
      <div class="info-panel">
-        <h2>Torso</h2>
-        <p>Haz clic en una parte del torso para explorar sus funciones y características anatómicas.</p>
-        <div class="info-details">
-            <p><strong>Estado:</strong> Interactivo</p>
-            <p><strong>Fuente:</strong> Modelo Torso.glb</p>
-            <p><strong>Versión:</strong> 1.0.2</p>
-        </div>
+        <h2>¡Bienvenido a MedExplora!</h2>
+        <p>Donde los médicos exploran…</p>
+        <p>Haz clic en una parte del cuerpo para explorar sus funciones y características anatómicas.</p>
     </div>
 
 
@@ -165,7 +161,7 @@ onMounted(async () => {
       if (objeto.userData.parte) {
         const parte = objeto.userData.parte
         console.log('Clic en parte:', objeto.userData.parte)
-        router.push(`/${parte}`)
+        router.push(`/partes_cuerpo/${parte}`)
       }
 
     }
